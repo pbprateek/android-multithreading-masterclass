@@ -10,22 +10,24 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.techyourchance.multithreading.R;
-import com.techyourchance.multithreading.common.BaseFragment;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.techyourchance.multithreading.R;
+import com.techyourchance.multithreading.common.BaseFragment;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 @SuppressLint("SetTextI18n")
-public class AtomicityDemonstrationFragment extends BaseFragment {
+public class AtomicityDemonstrationSolutionFragment extends BaseFragment {
 
     private static final int COUNT_UP_TO = 1000;
     private static final int NUM_OF_COUNTER_THREADS = 100;
 
     public static Fragment newInstance() {
-        return new AtomicityDemonstrationFragment();
+        return new AtomicityDemonstrationSolutionFragment();
     }
 
     private Button mBtnStartCount;
@@ -33,7 +35,8 @@ public class AtomicityDemonstrationFragment extends BaseFragment {
 
     private Handler mUiHandler = new Handler(Looper.getMainLooper());
 
-    private volatile int mCount;
+    //We can also make this final in place of volatile bcz according to java , final is also thread safe
+    private volatile AtomicInteger mCount;
 
     @Nullable
     @Override
@@ -69,7 +72,7 @@ public class AtomicityDemonstrationFragment extends BaseFragment {
     }
 
     private void startCount() {
-        mCount = 0;
+        mCount = new AtomicInteger(0);
         mTxtFinalCount.setText("");
         mBtnStartCount.setEnabled(false);
 
@@ -80,7 +83,7 @@ public class AtomicityDemonstrationFragment extends BaseFragment {
         mUiHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                mTxtFinalCount.setText(String.valueOf(mCount));
+                mTxtFinalCount.setText(String.valueOf(mCount.get()));
                 mBtnStartCount.setEnabled(true);
             }
         }, NUM_OF_COUNTER_THREADS * 20);
@@ -91,27 +94,11 @@ public class AtomicityDemonstrationFragment extends BaseFragment {
             @Override
             public void run() {
                 for (int i = 0; i < COUNT_UP_TO; i++) {
-
-                    //Whenever a single thread performs read modify and write operation , no other thread should
-                    //be allowed to use these variables.Or else atomicity problem will happen.
-                    //Race condition is also same
-
-                    //Android follows Preemptive multitasking , so below the problem is suppose we assign mCount
-                    // to localCount then OS decides to pause right there and jump to a different thread for execution.Now
-                    //what will happen is two threads has same value of localCount but that should be not the case.
-                    //now the 2nd thread will assign the value of localhost + 1,and the same will happen in 1st thread
-                    //So we are missing count by 1 in 2 threads.
-                    //This will happen more often in slow system
-
-                    //U will notice that the right count should be 10000 but at times u will get less than that,if u run
-                    //it multiple times
-
-                    //How we can fix this ?
-                    //Check Solution
-
-                    int localCount = mCount;
-                    mCount = localCount + 1;
-                    //mCount++;   This code is same as above
+                    //Why this works bcz when u use atomic classes and perform some operations on it,
+                    //then to the OS it appears as one operation
+                    //Still atomicity problem can happen,So u better observe and write carefully bcz atomic
+                    //classes dosen't fully gurantee the fix
+                    mCount.getAndIncrement();
                 }
             }
         }).start();

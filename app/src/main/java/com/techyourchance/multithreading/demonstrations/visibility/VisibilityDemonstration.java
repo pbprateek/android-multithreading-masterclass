@@ -4,6 +4,11 @@ public class VisibilityDemonstration {
 
     private static int sCount = 0;
 
+    //When u will run this u will notice that Consumer thread will just trigger once which is very
+    // first time bcz compiler somehow treats sCount as local or cached for Consumer.This is Visibility issue
+    //happens when two thread tries to access common element which in our case is sCount.
+
+    //An easy fix is to make sCount is volatile
     public static void main(String[] args) {
         new Consumer().start();
         try {
